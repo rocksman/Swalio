@@ -5,7 +5,6 @@ import MicOffIcon from '@material-ui/icons/MicOff';
 import VideocamIcon from '@material-ui/icons/Videocam';
 import VideocamOffIcon from '@material-ui/icons/VideocamOff';
 import { socket } from '../App';
-import { useParams } from "react-router";
 
 const Wrapper = styled.div`
     height: 100vh;
@@ -14,16 +13,23 @@ const Wrapper = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow-y: auto;
 `;
 const Container = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-flow: row wrap;
+    flex-direction: row;
     width: ${props => props.theme.width};
+    @media (max-width: 1024px) {
+        flex-direction: column;
+    }
 `;
 const VideoController = styled.div`
     position: relative;
+    @media (max-width: 1024px) {
+        margin-bottom: 50px;
+    }
 `;
 const Video = styled.video`
     height: 360px;
@@ -32,7 +38,13 @@ const Video = styled.video`
     background: ${props => props.theme.colors.black};
     transform:rotateY(180deg);
     box-shadow: 0 8px 6px -6px rgba(0,0,0,0.4);
-    object-fit: cover;
+    object-fit: contain;
+    @media (max-width: 1024px) {
+        height: 100vh;
+        width: 100vw;
+        border-radius: 0px;
+        box-shadow: none;
+    }
 `;
 const Actions = styled.div`
     display: flex;
@@ -50,7 +62,7 @@ const Action = styled.div`
     align-items: center;
     justify-content: center;
     border: 2px solid ${props => props.theme.colors.primary};
-    background: ${props => props.active? 'none' : props.theme.colors.primary};
+    background: ${props => props.active? props.theme.colors.primary+'11' : props.theme.colors.primary};
     border-radius: 50%;
     :hover{
         background: ${props => props.active? props.theme.colors.primary: 'none'};
@@ -63,6 +75,9 @@ const Line = styled.div`
     width: 1px;
     height: 280px;
     background: ${props => props.theme.colors.lightGrey};
+    @media (max-width: 1024px) {
+        display: none;
+    }
 `;
 const FormController = styled.div`
     width: 320px;
@@ -71,6 +86,11 @@ const FormController = styled.div`
         text-transform: capitalize;
         font-weight: 400;
         margin-bottom: 50px;
+    }
+    @media (max-width: 1024px) {
+        width: 90%;
+        margin: auto;
+        margin-bottom: 30px;
     }
 `;
 const TextField = styled.input`
@@ -128,6 +148,9 @@ class Home extends Component{
         socket.on('joined', (data) => {
             this.props.usersInfo({users: data.members, size: data.clients});
             this.props.history.push(`/room/${data.room}`);
+        })
+        socket.on('full', (data)=>{
+            alert('Room Full');
         })
     }
     getUserStream = () => {

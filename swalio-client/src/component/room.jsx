@@ -28,7 +28,7 @@ const VideoBox = styled.video`
     background: ${props => props.theme.colors.black};
     border-radius: 5px;
     transform:rotateY(180deg);
-    object-fit: cover;
+    object-fit: contain;
 `;
 const MyVideoBox = styled.video`
     position: fixed;
@@ -41,7 +41,13 @@ const MyVideoBox = styled.video`
     border-radius: 5px;
     transform:rotateY(180deg);
     box-shadow: 0 8px 6px -6px rgba(0,0,0,0.4);
-    object-fit: cover;
+    object-fit: contain;
+    @media (max-width: 1024px) {
+        height: 100px;
+        width: 175px;
+        top: 10px;
+        bottom: none;
+    }
 `;
 const ControlContainer = styled.div`
     position: fixed;
