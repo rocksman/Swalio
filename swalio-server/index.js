@@ -11,7 +11,7 @@ var certificate = fs.readFileSync('./certificates/certificate.pem').toString();
 var credentials = {key: privateKey, cert: certificate};
 
 const httpServer = require("http").createServer(app);
-const httpsServer = require("https").createServer(credentials, app);
+// const httpsServer = require("https").createServer(credentials, app);
 
 var io = require("socket.io")(httpServer, { origins: "*:*" });
 
@@ -80,6 +80,6 @@ httpServer.listen(7000, function () {
     console.log('listening on', 7000);
 });
 
-httpsServer.listen(7433, function () {
-    console.log('HTTPS listening on', 7433);
-});
+// httpsServer.listen(7433, function () {
+//     console.log('HTTPS listening on', 7433);
+// });

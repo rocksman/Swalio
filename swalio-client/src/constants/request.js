@@ -1,5 +1,5 @@
 exports.constants = {
-    request: 'http://192.168.1.19:7000',
+    request: 'https://server.swalio.live',
     iceServers : {
         'iceServers': [
             { 'urls': 'stun:stun.services.mozilla.com' },
