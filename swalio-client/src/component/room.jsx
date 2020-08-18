@@ -58,10 +58,10 @@ const Controls = styled.div`
     height: 50px;
     width: 200px;
     padding: 10px 5%;
+    display: ${props => props.active? 'flex': 'none'};
     background: ${props => props.theme.colors.black};
     box-shadow: 0 8px 6px -6px rgba(0,0,0,0.4);
     border-radius: 5px;
-    display: flex;
     align-items: center;
     justify-content: space-between;
 `;
@@ -75,6 +75,7 @@ const Control = styled.div`
     border: 2px solid ${props => props.theme.colors.primary};
     background: ${props => props.active? 'none' : props.theme.colors.primary};
     border-radius: 50%;
+    transition: .5s;
     :hover{
         background: ${props => props.active? props.theme.colors.primary: 'none'};
     }
@@ -91,24 +92,19 @@ let tracks = [];
 class Room extends Component {
     constructor(props) {
         super(props);
+        this.state = {
+            controls: true
+        }
         this.local = React.createRef();
         this.remote = React.createRef();
     }
     componentDidUpdate = (prevProps) => {
         if(JSON.stringify(this.props.config) != JSON.stringify(prevProps.config)){
             if(this.props.config.video || this.props.config.audio){
-                // rtcPeerConnection.getSenders().map(sender => {
-                //     console.log(sender);
-                //     rtcPeerConnection.removeTrack(sender);
-                // })
                 navigator.mediaDevices.getUserMedia({ video: this.props.config.video, audio: this.props.config.audio }).then((stream) => {
                     this.showStream(stream);
                     localstream.getAudioTracks()[0].enabled = this.props.config.audio;
                     localstream.getVideoTracks()[0].enabled = this.props.config.video;
-                    // localstream.getTracks().map(track => {
-                    //     tracks.push(rtcPeerConnection.addTrack(track, localstream));
-                    //     console.log(tracks);
-                    // })
                 });
             }
         }
@@ -145,8 +141,6 @@ class Room extends Component {
                         localstream.getTracks().map(track => {
                             tracks.push(rtcPeerConnection.addTrack(track, localstream));
                         })
-                        // rtcPeerConnection.addTrack(localstream.getTracks()[0], localstream);
-                        // rtcPeerConnection.addTrack(localstream.getTracks()[1], localstream);
                         rtcPeerConnection.createOffer()
                             .then(sessionDescription => {
                                 rtcPeerConnection.setLocalDescription(sessionDescription);
@@ -170,8 +164,6 @@ class Room extends Component {
                         localstream.getTracks().map(track => {
                             tracks.push(rtcPeerConnection.addTrack(track, localstream));
                         })
-                        // rtcPeerConnection.addTrack(localstream.getTracks()[0], localstream);
-                        // rtcPeerConnection.addTrack(localstream.getTracks()[1], localstream);
                         rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(event));
                         rtcPeerConnection.createAnswer()
                             .then(sessionDescription => {
@@ -217,9 +209,15 @@ class Room extends Component {
         }
     }
 
+    toggleControls = () => {
+        this.setState({controls: true});
+        setTimeout(() => {
+            this.setState({ controls: false});
+        }, 5000)
+    }
+
     onAddStream = (event) => {
         if (this.remote.current) {
-            // this.remote.current.play();
             console.log(event)
             this.remote.current.srcObject = event.streams[0];
             this.remote.current.play();
@@ -234,7 +232,7 @@ class Room extends Component {
 
     render() {
         return (
-            <Wrapper>
+            <Wrapper onMouseMove={this.toggleControls}>
                 <Container>
                     {/* {usersInfo.users.map((item, index) => (
                         <Video 
@@ -253,7 +251,7 @@ class Room extends Component {
                     <VideoBox ref={this.remote}></VideoBox>
                 </Container>
                 <ControlContainer>
-                    <Controls>
+                    <Controls onMouseOver={this.toggleControls} active={this.state.controls}>
                         <Control onClick={this.videoController} active={this.props.config.video}>
                             {this.props.config.video ? <Videocam fontSize="large" style={{ color: '#fff' }} /> : <VideocamOff fontSize="large" style={{ color: '#fff' }} />}
                         </Control>
