@@ -73,6 +73,15 @@ io.on('connection', function (socket) {
         socket.broadcast.to(event.room).emit('answer',event.sdp);
     });
 
+    socket.on('close', function(room){
+        socket.leave(room);
+        socket.broadcast.to(room).emit('close', room);
+    });
+
+    socket.on('leave', function(room){
+        socket.leave(room);
+    });
+
 });
 
 // listener

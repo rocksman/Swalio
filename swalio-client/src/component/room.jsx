@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
+import Draggable, {DraggableCore} from 'react-draggable'
 import styled from 'styled-components';
-import { Mic, MicOff, Videocam, VideocamOff } from '@material-ui/icons';
+import { Mic, MicOff, Videocam, VideocamOff, CallEnd } from '@material-ui/icons';
 import { socket } from '../App';
 import { constants } from '../constants/request';
 
@@ -61,9 +62,10 @@ const ControlContainer = styled.div`
     justify-content: center;
 `;
 const Controls = styled.div`
-    height: 50px;
-    width: 200px;
-    padding: 10px 5%;
+    height: 70px;
+    width: 300px;
+    padding: 0px;
+    padding-left: 50px;
     display: ${props => props.active? 'flex': 'none'};
     background: ${props => props.theme.colors.black};
     box-shadow: 0 8px 6px -6px rgba(0,0,0,0.4);
@@ -85,10 +87,19 @@ const Control = styled.div`
     :hover{
         background: ${props => props.active? props.theme.colors.primary: 'none'};
     }
-    :nth-child(1){
-        margin-right: 30px;
-    }
 `;
+const Cancel = styled.button`
+    height: 100%;
+    width: 80px;
+    border: none;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e53935;
+`;
+
 
 let id;
 let rtcPeerConnection;
@@ -124,6 +135,10 @@ class Room extends Component {
                 this.props.history.push(`/${id}`)
             }
             else {
+                window.addEventListener("beforeunload", this.onUnload)
+                setTimeout(() => {
+                    this.setState({ controls: false});
+                }, 5000);
                 if (!this.props.user.create) {
                     navigator.mediaDevices.getUserMedia(this.props.config).then((stream) => {
                         localstream = stream;
@@ -132,7 +147,6 @@ class Room extends Component {
                     })
                 }
                 else {
-                    console.log(this.props.config);
                     navigator.mediaDevices.getUserMedia(this.props.config).then((stream) => {
                         localstream = stream;
                         this.showStream(stream)
@@ -140,7 +154,6 @@ class Room extends Component {
                 }
                 socket.on('ready', () => {
                     if (this.props.user.create) {
-                        console.log('ready');
                         rtcPeerConnection = new RTCPeerConnection(constants.iceServers);
                         rtcPeerConnection.onicecandidate = this.onIceCandidate;
                         rtcPeerConnection.ontrack = this.onAddStream;
@@ -195,9 +208,30 @@ class Room extends Component {
                     });
                     rtcPeerConnection.addIceCandidate(candidate);
                 });
+                socket.on('close', ()=>{
+                    rtcPeerConnection.close();
+                    this.props.history.push(`/`);
+                })
             }
         }
     }
+
+    componentWillUnmount = () => {
+        window.removeEventListener("beforeunload", this.onUnload)
+    }
+
+    onUnload = e => { // the method that will be used for both add and remove event
+        e.preventDefault();
+        e.returnValue = 'Sure you want to leave?';
+        console.log('Hi there reload');
+        try{
+            rtcPeerConnection.close();
+        }
+        catch(e){}
+        socket.emit('leave', id);
+        return 'Sure you want to leave?'
+     }
+
     showStream = (stream) => {
         this.local.current.srcObject = stream;
         this.local.current.play();
@@ -216,10 +250,12 @@ class Room extends Component {
     }
 
     toggleControls = () => {
-        this.setState({controls: true});
-        setTimeout(() => {
-            this.setState({ controls: false});
-        }, 5000)
+        if(!this.state.controls){
+            this.setState({controls: true});
+            setTimeout(() => {
+                this.setState({ controls: false});
+            }, 5000)
+        }
     }
 
     onAddStream = (event) => {
@@ -235,25 +271,19 @@ class Room extends Component {
     audioController = () => {
         this.props.userConfig({video: this.props.config.video, audio: !this.props.config.audio});
     }
+    closeMeeting = () => {
+        rtcPeerConnection.close();
+        socket.emit('close', id);
+        this.props.history.push('/');
+    }
 
     render() {
         return (
             <Wrapper onMouseMove={this.toggleControls}>
                 <Container>
-                    {/* {usersInfo.users.map((item, index) => (
-                        <Video 
-                            size={usersInfo.size} 
-                            name={item} 
-                            current={user} 
-                            room={id} 
-                            vidRef={(video) =>  this[`vid${index}_ref`] = video} 
-                            key={index} 
-                            showStream = {this.showStream}
-                            onIceCandidate = {this.onIceCandidate}
-                            onAddStream = {this.onAddStream}
-                        />
-                    ))} */}
-                    <MyVideoBox ref={this.local} muted></MyVideoBox>
+                    <Draggable>
+                        <MyVideoBox ref={this.local} muted></MyVideoBox>
+                    </Draggable>
                     <VideoBox ref={this.remote}></VideoBox>
                 </Container>
                 <ControlContainer>
@@ -264,6 +294,9 @@ class Room extends Component {
                         <Control onClick={this.audioController} active={this.props.config.audio}>
                             {this.props.config.audio ? <Mic fontSize="large" style={{ color: '#fff' }} /> : <MicOff fontSize="large" style={{ color: '#fff' }} />}
                         </Control>
+                        <Cancel>
+                            <CallEnd fontSize="large" style={{ color: '#fff' }} />
+                        </Cancel>
                     </Controls>
                 </ControlContainer>
             </Wrapper>
