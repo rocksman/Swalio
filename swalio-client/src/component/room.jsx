@@ -28,10 +28,10 @@ const VideoBox = styled.video`
     width: 100%;
     background: ${props => props.theme.colors.black};
     border-radius: 5px;
-    transform:rotateY(180deg);
+    transform:rotateY(180deg) !important;
     object-fit: contain;
 `;
-const MyVideoBox = styled.video`
+const MyVideoBox = styled.div`
     position: fixed;
     z-index: 10;
     bottom: 10px;
@@ -40,9 +40,15 @@ const MyVideoBox = styled.video`
     width: 350px;
     background: ${props => props.theme.colors.black};
     border-radius: 5px;
-    transform:rotateY(180deg);
+    /* transform:rotateY(180deg) !important; */
     box-shadow: 0 8px 6px -6px rgba(0,0,0,0.4);
     object-fit: contain;
+    >video{
+        height: 100%;
+        width: 100%;
+        transform:rotateY(180deg) !important;
+        object-fit: contain;
+    }
     @media (max-width: 1024px) {
         height: 100px;
         width: 175px;
@@ -210,7 +216,7 @@ class Room extends Component {
                 });
                 socket.on('close', ()=>{
                     rtcPeerConnection.close();
-                    this.props.history.push(`/`);
+                    this.props.history.push(`/roomend/end`);
                 })
             }
         }
@@ -272,9 +278,14 @@ class Room extends Component {
         this.props.userConfig({video: this.props.config.video, audio: !this.props.config.audio});
     }
     closeMeeting = () => {
-        rtcPeerConnection.close();
+        try{
+            rtcPeerConnection.close();
+        }
+        catch(e){
+            console.log('No connection yet')
+        }
         socket.emit('close', id);
-        this.props.history.push('/');
+        this.props.history.push('/roomend/end');
     }
 
     render() {
@@ -282,7 +293,9 @@ class Room extends Component {
             <Wrapper onMouseMove={this.toggleControls}>
                 <Container>
                     <Draggable>
-                        <MyVideoBox ref={this.local} muted></MyVideoBox>
+                        <MyVideoBox>
+                            <video ref={this.local} muted></video>
+                        </MyVideoBox>
                     </Draggable>
                     <VideoBox ref={this.remote}></VideoBox>
                 </Container>
@@ -294,7 +307,7 @@ class Room extends Component {
                         <Control onClick={this.audioController} active={this.props.config.audio}>
                             {this.props.config.audio ? <Mic fontSize="large" style={{ color: '#fff' }} /> : <MicOff fontSize="large" style={{ color: '#fff' }} />}
                         </Control>
-                        <Cancel>
+                        <Cancel onClick={this.closeMeeting}>
                             <CallEnd fontSize="large" style={{ color: '#fff' }} />
                         </Cancel>
                     </Controls>
